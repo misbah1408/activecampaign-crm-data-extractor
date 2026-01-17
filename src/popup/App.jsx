@@ -181,6 +181,42 @@ const App = () => {
     },
   ];
 
+  const downloadFile = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(data[activeTab], null, 2)], {
+      type: "application/json",
+    });
+    downloadFile(blob, `${activeTab}.json`);
+  };
+
+  const exportCSV = () => {
+    const rows = data[activeTab];
+    if (!rows || rows.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+    const csv = [
+      headers.join(","),
+      ...rows.map((row) =>
+        headers
+          .map((h) => `"${String(row[h] ?? "").replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    downloadFile(new Blob([csv], { type: "text/csv" }), `${activeTab}.csv`);
+  };
+
   const isOnActiveCampaign =
     currentUrl.includes("activecampaign.com") ||
     currentUrl.includes("activehosted.com");
@@ -250,6 +286,26 @@ const App = () => {
         >
           <RefreshCw size={16} />
         </button>
+        {/* Export Dropdown */}
+        <div className="relative group">
+          <button className="p-2 bg-gray-100 rounded">
+            <Download size={16} />
+          </button>
+          <div className="absolute right-0 mt-1 bg-white border rounded shadow hidden group-hover:block">
+            <button
+              onClick={exportCSV}
+              className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={exportJSON}
+              className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+            >
+              Export JSON
+            </button>
+          </div>
+        </div>
         <button
           onClick={handleExtract}
           disabled={isExtracting || !isOnActiveCampaign}
